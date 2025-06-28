@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "meteorist",
+  "version": "${version}",
+  "name": "Meteorist",
+  "description": "Add-on for Meteor that adds useful utilities for non-vanilla anarchy servers.",
+  "authors": [
+    "Zgoly"
+  ],
+  "contact": {
+    "homepage": "https://github.com/Zgoly/Meteorist",
+    "sources": "https://github.com/Zgoly/Meteorist"
+  },
+  "icon": "assets/meteorist/icon.png",
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "meteor": [
+      "zgoly.meteorist.Meteorist"
+    ]
+  },
+  "mixins": [
+    "meteorist.mixins.json"
+  ],
+  "accessWidener": "meteorist.accesswidener",
+  "custom": {
+    "meteor-client:color": "90,120,255"
+  },
+  "depends": {
+    "minecraft": "*",
+    "meteor-client": "*"
+  }
+}

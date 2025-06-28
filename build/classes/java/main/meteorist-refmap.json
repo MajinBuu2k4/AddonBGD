@@ -1,0 +1,32 @@
+{
+  "mappings": {
+    "zgoly/meteorist/mixin/DisconnectedScreenMixin": {
+      "init": "Lnet/minecraft/class_419;method_25426()V"
+    },
+    "zgoly/meteorist/mixin/GameRendererMixin": {
+      "renderHand": "Lnet/minecraft/class_757;method_3172(Lnet/minecraft/class_4184;FLorg/joml/Matrix4f;)V"
+    },
+    "zgoly/meteorist/mixin/MouseMixin": {
+      "Lnet/minecraft/client/option/GameOptions;smoothCameraEnabled:Z": "Lnet/minecraft/class_315;field_1914:Z",
+      "Lnet/minecraft/client/option/SimpleOption;getValue()Ljava/lang/Object;": "Lnet/minecraft/class_7172;method_41753()Ljava/lang/Object;",
+      "Lnet/minecraft/util/math/Smoother;smooth(DD)D": "Lnet/minecraft/class_3540;method_15429(DD)D",
+      "updateMouse": "Lnet/minecraft/class_312;method_1606(D)V"
+    }
+  },
+  "data": {
+    "named:intermediary": {
+      "zgoly/meteorist/mixin/DisconnectedScreenMixin": {
+        "init": "Lnet/minecraft/class_419;method_25426()V"
+      },
+      "zgoly/meteorist/mixin/GameRendererMixin": {
+        "renderHand": "Lnet/minecraft/class_757;method_3172(Lnet/minecraft/class_4184;FLorg/joml/Matrix4f;)V"
+      },
+      "zgoly/meteorist/mixin/MouseMixin": {
+        "Lnet/minecraft/client/option/GameOptions;smoothCameraEnabled:Z": "Lnet/minecraft/class_315;field_1914:Z",
+        "Lnet/minecraft/client/option/SimpleOption;getValue()Ljava/lang/Object;": "Lnet/minecraft/class_7172;method_41753()Ljava/lang/Object;",
+        "Lnet/minecraft/util/math/Smoother;smooth(DD)D": "Lnet/minecraft/class_3540;method_15429(DD)D",
+        "updateMouse": "Lnet/minecraft/class_312;method_1606(D)V"
+      }
+    }
+  }
+}
