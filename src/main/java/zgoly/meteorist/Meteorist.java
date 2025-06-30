@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import zgoly.meteorist.commands.*;
 import zgoly.meteorist.hud.TextPresets;
 import zgoly.meteorist.modules.*;
+import zgoly.meteorist.modules.FlyGotoMine.FlyGotoMine;
 import zgoly.meteorist.modules.autocrafter.AutoCrafter;
 import zgoly.meteorist.modules.autologin.AutoLogin;
 import zgoly.meteorist.modules.autotrade.AutoTrade;
@@ -26,6 +27,7 @@ import zgoly.meteorist.modules.rangeactions.RangeActions;
 import zgoly.meteorist.modules.slotclick.SlotClick;
 import zgoly.meteorist.settings.StringPairSetting;
 import zgoly.meteorist.utils.misc.MeteoristStarscript;
+import zgoly.meteorist.modules.ChuyenSinh.*;
 //Tự thêm
 
 
@@ -35,7 +37,7 @@ public class Meteorist extends MeteorAddon {
     public static final Logger LOG = LoggerFactory.getLogger("Meteorist");
     public static final Category CATEGORY = new Category("Meteorist", Items.FIRE_CHARGE.getDefaultStack());
     public static final Category Custom = new Category("Custom");
-    public static final Category DichChuyenNhanh = new Category("DichChuyenNhanh");
+    public static final Category ChuyenSinh = new Category("ChuyenSinh");
     public static final HudGroup HUD_GROUP = new HudGroup("Meteorist");
     private static final String[] MESSAGES = {
             "Meteorist is coming",
@@ -113,7 +115,21 @@ public class Meteorist extends MeteorAddon {
         Modules.get().add(new ThongBaoBoss());
         Modules.get().add(new AutoGotoMine());
         Modules.get().add(new AutoChao());
+        Modules.get().add(new FlyGotoMine());
 
+
+        //ChuyenSinh
+        Modules.get().add(new Cs00());
+        Modules.get().add(new Cs01());
+        Modules.get().add(new Cs02());
+        Modules.get().add(new Cs03());
+        Modules.get().add(new Cs04());
+        Modules.get().add(new Cs05());
+        Modules.get().add(new Cs06());
+        Modules.get().add(new Cs07());
+        Modules.get().add(new Cs08());
+        Modules.get().add(new Cs09());
+        Modules.get().add(new Cs10());
 
 
 
@@ -145,7 +161,7 @@ public class Meteorist extends MeteorAddon {
     public void onRegisterCategories() {
         Modules.registerCategory(CATEGORY);
         Modules.registerCategory(Custom);
-        Modules.registerCategory(DichChuyenNhanh);
+        Modules.registerCategory(ChuyenSinh);
     }
 
     @Override
