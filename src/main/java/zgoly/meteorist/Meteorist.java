@@ -2,6 +2,7 @@ package zgoly.meteorist;
 
 import meteordevelopment.meteorclient.addons.GithubRepo;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
+import meteordevelopment.meteorclient.commands.Command;
 import meteordevelopment.meteorclient.commands.Commands;
 import meteordevelopment.meteorclient.gui.renderer.GuiRenderer;
 import meteordevelopment.meteorclient.gui.renderer.packer.GuiTexture;
@@ -17,6 +18,8 @@ import zgoly.meteorist.commands.*;
 import zgoly.meteorist.hud.TextPresets;
 import zgoly.meteorist.modules.*;
 import zgoly.meteorist.modules.FlyGotoMine.FlyGotoMine;
+import zgoly.meteorist.modules.WaypointFly.CommandWaypoint;
+import zgoly.meteorist.modules.WaypointFly.WaypointFly;
 import zgoly.meteorist.modules.autocrafter.AutoCrafter;
 import zgoly.meteorist.modules.autologin.AutoLogin;
 import zgoly.meteorist.modules.autotrade.AutoTrade;
@@ -28,6 +31,8 @@ import zgoly.meteorist.modules.slotclick.SlotClick;
 import zgoly.meteorist.settings.StringPairSetting;
 import zgoly.meteorist.utils.misc.MeteoristStarscript;
 import zgoly.meteorist.modules.ChuyenSinh.*;
+import zgoly.meteorist.commands.FlyCommand;
+
 //Tự thêm
 
 
@@ -116,6 +121,8 @@ public class Meteorist extends MeteorAddon {
         Modules.get().add(new AutoGotoMine());
         Modules.get().add(new AutoChao());
         Modules.get().add(new FlyGotoMine());
+        Modules.get().add(new FlySurvival());
+        Modules.get().add(new WaypointFly());
 
 
         //ChuyenSinh
@@ -141,6 +148,8 @@ public class Meteorist extends MeteorAddon {
         Commands.add(new InteractCommand());
         Commands.add(new PlayersInfoCommand());
         Commands.add(new ActiveCommand());
+        Commands.add(new FlyCommand());
+        Commands.add(new CommandWaypoint());
 
 
 
