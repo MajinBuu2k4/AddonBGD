@@ -2,7 +2,6 @@ package zgoly.meteorist;
 
 import meteordevelopment.meteorclient.addons.GithubRepo;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
-import meteordevelopment.meteorclient.commands.Command;
 import meteordevelopment.meteorclient.commands.Commands;
 import meteordevelopment.meteorclient.gui.renderer.GuiRenderer;
 import meteordevelopment.meteorclient.gui.renderer.packer.GuiTexture;
@@ -18,8 +17,8 @@ import zgoly.meteorist.commands.*;
 import zgoly.meteorist.hud.TextPresets;
 import zgoly.meteorist.modules.*;
 import zgoly.meteorist.modules.FlyGotoMine.FlyGotoMine;
-import zgoly.meteorist.modules.WaypointFly.CommandWaypoint;
 import zgoly.meteorist.modules.WaypointFly.WaypointFly;
+import zgoly.meteorist.modules.WaypointFly.CommandWaypoint;
 import zgoly.meteorist.modules.autocrafter.AutoCrafter;
 import zgoly.meteorist.modules.autologin.AutoLogin;
 import zgoly.meteorist.modules.autotrade.AutoTrade;
@@ -125,6 +124,7 @@ public class Meteorist extends MeteorAddon {
         Modules.get().add(new WaypointFly());
 
 
+
         //ChuyenSinh
         Modules.get().add(new Cs00());
         Modules.get().add(new Cs01());
@@ -150,6 +150,8 @@ public class Meteorist extends MeteorAddon {
         Commands.add(new ActiveCommand());
         Commands.add(new FlyCommand());
         Commands.add(new CommandWaypoint());
+
+
 
 
 
