@@ -3,10 +3,9 @@ package zgoly.meteorist.modules.movement;
 import meteordevelopment.meteorclient.events.game.OpenScreenEvent;
 import meteordevelopment.meteorclient.events.render.Render2DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
-import meteordevelopment.meteorclient.settings.IntSetting;
-import meteordevelopment.meteorclient.settings.Setting;
-import meteordevelopment.meteorclient.settings.SettingGroup;
+import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.client.gui.screen.DeathScreen;
 import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
@@ -15,9 +14,8 @@ import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import zgoly.meteorist.Meteorist;
+import zgoly.meteorist.modules.WaypointFly.ReturnToStart;
 
-
-import zgoly.meteorist.modules.movement.LicenseProtectedModule;
 public class AutoQuaMine extends LicenseProtectedModule {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
@@ -39,21 +37,27 @@ public class AutoQuaMine extends LicenseProtectedModule {
             .build()
     );
 
+    // ✅ Tuỳ chọn mới: Bật ReturnToStart sau khi click thành công
+    private final Setting<Boolean> enableReturnToStart = sgGeneral.add(new BoolSetting.Builder()
+            .name("bat-return-to-start")
+            .description("Tự động bật ReturnToStart sau khi chọn mine.")
+            .defaultValue(true)
+            .build()
+    );
+
     private boolean hasClicked = false;
     private boolean commandSent = false;
     private boolean inMineGui = false;
     private long respawnTime = 0;
 
     public AutoQuaMine() {
-        super(Meteorist.Custom, "auto-qua-mine", "Tu dong qua Mine");
+        super(Meteorist.Custom, "auto-qua-mine", "Tự động qua Mine");
     }
 
     @Override
     public void onActivate() {
-
         super.onActivate(); // ✅ Kiểm tra license
-        if (!isActive()) return; // ✅ Nếu không hợp lệ thì không chạy tiếp
-
+        if (!isActive()) return;
 
         commandSent = false;
         respawnTime = 0;
@@ -113,6 +117,15 @@ public class AutoQuaMine extends LicenseProtectedModule {
                 hasClicked = true;
                 commandSent = false;
                 inMineGui = false;
+
+                // ✅ Gọi ReturnToStart nếu được bật
+                if (enableReturnToStart.get()) {
+                    Module returnToStart = Modules.get().get(ReturnToStart.class);
+                    if (!returnToStart.isActive()) {
+                        returnToStart.toggle();
+                        info("✅ Đã bật ReturnToStart.");
+                    }
+                }
             }
         }
     }

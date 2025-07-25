@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mô phỏng Slot Rương To Minecraft</title>
+    <style>
+        body {
+          font-family: sans-serif;
+          background-color: #222;
+          color: white;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 20px;
+        }
+        h2 {
+          margin: 10px;
+        }
+        .grid {
+          display: grid;
+          grid-template-columns: repeat(9, 40px);
+          gap: 4px;
+          margin-bottom: 20px;
+        }
+        .slot {
+          width: 40px;
+          height: 40px;
+          background-color: #444;
+          border: 2px solid #888;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          border-radius: 4px;
+        }
+        .chest .slot {
+          background-color: #555;
+        }
+        .inventory .slot {
+          background-color: #333;
+        }
+        .hotbar .slot {
+          background-color: #666;
+        }
+    </style>
+</head>
+<body>
+<h2>🎁 Rương To (Large Chest - 6x9)</h2>
+<div class="grid chest" id="chestGrid"></div>
+
+<h2>🎒 Inventory Player (3x9)</h2>
+<div class="grid inventory" id="inventoryGrid"></div>
+
+<h2>🔧 Hotbar (1x9)</h2>
+<div class="grid hotbar" id="hotbarGrid"></div>
+
+<script>
+    // Render slots cho rương to
+    const chestGrid = document.getElementById('chestGrid');
+    for (let i = 0; i < 54; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.textContent = i;
+      chestGrid.appendChild(slot);
+    }
+
+    // Render slots cho inventory player
+    const inventoryGrid = document.getElementById('inventoryGrid');
+    for (let i = 54; i < 81; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.textContent = i;
+      inventoryGrid.appendChild(slot);
+    }
+
+    // Render slots cho hotbar
+    const hotbarGrid = document.getElementById('hotbarGrid');
+    for (let i = 81; i < 90; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.textContent = i;
+      hotbarGrid.appendChild(slot);
+    }
+</script>
+</body>
+</html>

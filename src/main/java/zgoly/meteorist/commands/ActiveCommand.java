@@ -31,7 +31,7 @@ public class ActiveCommand extends Command {
                     String mcuser = mc.getSession() != null ? mc.getSession().getUsername() : "unknown";
 
                     try {
-                        URL url = new URL("https://banggaudien.up.railway.app/activate-key");
+                        URL url = new URL("https://michaelphucs.xyz/activate-key");
                         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                         conn.setRequestMethod("POST");
                         conn.setDoOutput(true);

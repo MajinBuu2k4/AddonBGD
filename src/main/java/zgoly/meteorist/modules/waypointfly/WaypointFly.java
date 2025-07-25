@@ -1,5 +1,6 @@
 package zgoly.meteorist.modules.WaypointFly;
 
+import meteordevelopment.meteorclient.events.game.GameLeftEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
@@ -7,200 +8,334 @@ import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.util.math.Vec3d;
 import zgoly.meteorist.Meteorist;
+import meteordevelopment.meteorclient.systems.modules.Modules;
+import zgoly.meteorist.modules.movement.LicenseProtectedModule;
 
-import java.io.*;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.ArrayList;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
-public class WaypointFly extends Module {
-    private final SettingGroup sgGeneral = settings.getDefaultGroup();
-
-    private final Setting<List<String>> waypoints = sgGeneral.add(new StringListSetting.Builder()
+public class WaypointFly extends LicenseProtectedModule {
+    public final SettingGroup sgGeneral = settings.getDefaultGroup();
+    public final Setting<List<String>> waypointStrings = sgGeneral.add(new StringListSetting.Builder()
             .name("waypoints")
-            .description("Danh sách các waypoint và delay.")
+            .description("Danh sach cac waypoint.")
             .defaultValue(new ArrayList<>())
+            .build()
+    );
+
+    public final Setting<Boolean> autoEnableFly = sgGeneral.add(new BoolSetting.Builder()
+            .name("auto-enable-fly")
+            .description("Tu dong gui /fly enable khi bat module.")
+            .defaultValue(true)
             .build()
     );
 
     public final Setting<Double> reachRange = sgGeneral.add(new DoubleSetting.Builder()
             .name("waypoint-reach-range")
-            .description("Khoảng cách tối đa để tính là đã đến waypoint.")
+            .description("Khoang cach toi da tinh la da den waypoint.")
             .defaultValue(3)
             .min(0.1)
             .sliderMax(10)
             .build()
     );
 
+    public final Setting<Integer> gotoResendDelay = sgGeneral.add(new IntSetting.Builder()
+            .name("goto-resend-delay")
+            .description("So tick (1/20s) cho moi lan gui lai lenh #goto.")
+            .defaultValue(20) // 1 giây
+            .min(1)
+            .sliderMax(100)
+            .build()
+    );
+
+
+    public final Setting<Boolean> loop = sgGeneral.add(new BoolSetting.Builder()
+            .name("loop")
+            .description("Lap lai waypoint sau khi hoan thanh.")
+            .defaultValue(false)
+            .build()
+    );
+
+    public final Setting<Boolean> disableOnDisconnect = sgGeneral.add(new BoolSetting.Builder()
+            .name("disable-on-disconnect")
+            .description("Tu dong tat module khi disconnect khoi server.")
+            .defaultValue(true)
+            .build()
+    );
+
+    public final Setting<Boolean> useFlySpeed = sgGeneral.add(new BoolSetting.Builder()
+            .name("use-fly-speed")
+            .description("Bat toc do bay tuy chinh.")
+            .defaultValue(false)
+            .build()
+    );
+
+    public final Setting<Double> flySpeed = sgGeneral.add(new DoubleSetting.Builder()
+            .name("fly-speed")
+            .description("Toc do bay giua cac waypoint.")
+            .defaultValue(1.0)
+            .min(0.1)
+            .sliderMax(5)
+            .visible(() -> useFlySpeed.get())
+            .build()
+    );
+
+    private AntiStuckDetector antiStuck;
+
     private int currentIndex = 0;
     private int delayTicks = 0;
-    private boolean waitingToFly = false;
     private int flyTicks = 0;
-    private boolean reachedPreviousWaypoint = true;
+    private int gotoTickCounter = 0;
 
-    private static final File SAVE_FILE = new File("config/meteorist/waypoints/WaypointFly.json");
-    private static final Gson GSON = new Gson();
+    private boolean waitingToFly = false;
+    private boolean waitingForLanding = false;
+    private boolean reachedPreviousWaypoint = true;
+    private List<WaypointEntry> entries = new ArrayList<>();
 
     public WaypointFly() {
-        super(Meteorist.Custom, "waypoint-fly", "Tự động bay qua các waypoint.");
-        File folder = SAVE_FILE.getParentFile();
-        if (!folder.exists()) folder.mkdirs();
+        super(Meteorist.Custom, "waypoint-fly-v1", "Auto fly mine v1.");
     }
 
     @Override
     public void onActivate() {
+        super.onActivate(); // ✅ Kiểm tra license
+        if (!isActive()) return;
         if (mc.player == null) return;
 
-        ChatUtils.sendPlayerMsg("/fly");
-        waitingToFly = true;
+        if (antiStuck == null) {
+            antiStuck = Modules.get().get(AntiStuckDetector.class);
+            if (antiStuck == null) warning("⚠️ Khong tim thay module AntiStuckDetector.");
+        }
+
+        if (autoEnableFly.get()) {
+            ChatUtils.sendPlayerMsg("/fly enable");
+            waitingToFly = true;
+            info("✈️ Tu dong bat che do bay (/fly).");
+        } else {
+            waitingToFly = false; // Không chờ bay nữa
+            info("⚡ Bat dau waypoint ngay (khong bat /fly).");
+        }
         flyTicks = 0;
         currentIndex = 0;
         delayTicks = 0;
         reachedPreviousWaypoint = true;
+
+        entries.clear();
+
+        for (String line : waypointStrings.get()) {
+            try {
+                WaypointEntry entry = new WaypointEntry(line);
+                entries.add(entry);
+            } catch (Exception e) {
+                warning("❌ Loi khi phan tich waypoint: " + line);
+            }
+        }
+
+        meteordevelopment.meteorclient.MeteorClient.EVENT_BUS.subscribe(this);
     }
 
     @Override
     public void onDeactivate() {
         if (mc.player != null) mc.player.setVelocity(Vec3d.ZERO);
+        meteordevelopment.meteorclient.MeteorClient.EVENT_BUS.unsubscribe(this);
+        waitingToFly = false;
+        waitingForLanding = false;
+        flyTicks = 0;
+        delayTicks = 0;
+        gotoTickCounter = 0;
+        currentIndex = 0;
+        if (antiStuck != null && antiStuck.isActive()) antiStuck.toggle();
     }
 
     @EventHandler
     private void onTick(TickEvent.Post event) {
-        if (mc.player == null) return;
+        if (!isActive() || mc.player == null) return;
 
-        List<String> wp = waypoints.get();
-        if (wp == null || wp.isEmpty()) return;
+        if (entries == null || entries.isEmpty()) {
+            info("⚠️ Khong co waypoint nao, tat module.");
+            toggle();
+            return;
+        }
 
-        // Đợi chế độ bay bật
+        if (currentIndex >= entries.size()) {
+            if (loop.get()) {
+                info("🔁 Lap lai waypoint tu dau.");
+                currentIndex = 0;
+                return;
+            } else {
+                toggle();
+                info("✅ Da hoan thanh waypoint.");
+                return;
+            }
+        }
+
         if (waitingToFly) {
+            if (!autoEnableFly.get()) {
+                waitingToFly = false; // Nếu không bật auto thì bỏ qua chờ bay
+                return;
+            }
+
             flyTicks++;
             if (flyTicks == 2 || flyTicks == 6) mc.options.jumpKey.setPressed(true);
             else if (flyTicks == 3 || flyTicks == 7) mc.options.jumpKey.setPressed(false);
 
             if (flyTicks > 20 && !mc.player.getAbilities().flying) {
                 flyTicks = 0;
-                ChatUtils.sendPlayerMsg("/fly");
-                info("🔁 Gửi lại lệnh /fly.");
+                ChatUtils.sendPlayerMsg("/fly enable");
+                info("🔁 Gui lai lenh /fly.");
             }
 
             if (mc.player.getAbilities().flying) {
                 waitingToFly = false;
-                info("🛫 Đã vào chế độ bay.");
-            }
-            return;
-        }
-
-        if (currentIndex >= wp.size()) {
-            info("✅ Đã hoàn thành tất cả waypoint.");
-            toggle(); // Tự tắt module
-            return;
-        }
-
-        String line = wp.get(currentIndex).trim();
-
-        // Xử lý delay
-        if (line.toLowerCase().startsWith("delay")) {
-            if (!reachedPreviousWaypoint) return;
-
-            if (delayTicks == 0) {
-                String[] parts = line.split(" ");
-                int seconds = parts.length > 1 ? parseIntOrDefault(parts[1], 3) : 3;
-                delayTicks = seconds * 20;
-                info("⏱️ Delay " + seconds + " giây.");
+                info("🛫 Da vao che do bay.");
             }
 
-            delayTicks--;
-            if (delayTicks <= 0) {
-                currentIndex++;
-                delayTicks = 0;
-                reachedPreviousWaypoint = true;
-            }
             return;
         }
 
-        // Xử lý waypoint toạ độ
-        String[] coords = line.split(" ");
-        if (coords.length != 3) {
-            warning("⚠️ Waypoint không hợp lệ: " + line);
-            currentIndex++;
-            return;
-        }
-
-        try {
-            double x = Double.parseDouble(coords[0]);
-            double y = Double.parseDouble(coords[1]);
-            double z = Double.parseDouble(coords[2]);
-
-            Vec3d target = new Vec3d(x, y, z);
-            Vec3d playerPos = mc.player.getPos();
-            double dist = playerPos.distanceTo(target);
-
-            if (dist < reachRange.get()) {
+        if (waitingForLanding) {
+            if (mc.player.isOnGround()) {
+                waitingForLanding = false;
                 currentIndex++;
                 reachedPreviousWaypoint = true;
-            } else {
-                reachedPreviousWaypoint = false;
-                Vec3d motion = target.subtract(playerPos).normalize().multiply(0.6);
-                mc.player.setVelocity(motion);
+                info("✅ Da tiep dat, tiep tuc waypoint.");
             }
-        } catch (Exception e) {
-            warning("⚠️ Lỗi tọa độ: " + line);
-            currentIndex++;
-        }
-    }
-
-    public void saveWaypoints() {
-        try (FileWriter writer = new FileWriter(SAVE_FILE)) {
-            GSON.toJson(waypoints.get(), writer);
-            info("💾 Đã lưu waypoint vào: " + SAVE_FILE.getAbsolutePath());
-        } catch (IOException e) {
-            error("❌ Không thể lưu file: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    public void loadWaypoints() {
-        if (!SAVE_FILE.exists()) {
-            warning("⚠️ File không tồn tại: " + SAVE_FILE.getAbsolutePath());
             return;
         }
 
-        try (FileReader reader = new FileReader(SAVE_FILE)) {
-            Type listType = new TypeToken<List<String>>() {}.getType();
-            List<String> loaded = GSON.fromJson(reader, listType);
-            if (loaded == null) loaded = new ArrayList<>();
-            waypoints.set(loaded);
-            info("📂 Đã tải " + loaded.size() + " waypoint từ JSON.");
-        } catch (Exception e) {
-            error("❌ Lỗi khi đọc file JSON: " + e.getMessage());
-            e.printStackTrace();
+        WaypointEntry entry = entries.get(currentIndex);
+        switch (entry.type) {
+            case POS -> handlePos(entry);
+            case GOTO -> handleGoto(entry);
+            case DELAY -> handleDelay(entry);
+            case FLYON -> {
+                ChatUtils.sendPlayerMsg("/fly enable");
+                waitingToFly = true;
+                currentIndex++;
+            }
+            case FLYOFF -> {
+                ChatUtils.sendPlayerMsg("/fly disable");
+                waitingForLanding = true;
+                info("🪂 Da tat che do bay, cho tiep dat...");
+            }
+            case COMMAND -> {
+                ChatUtils.sendPlayerMsg("/" + entry.command);
+                currentIndex++;
+            }
+            case ASDON -> {
+                handleASDON(entry);
+                currentIndex++;
+            }
+            case ASDOFF -> {
+                handleASDOFF(entry);
+                currentIndex++;
+            }
         }
     }
 
-    public void addWaypoint(String waypoint) {
-        List<String> list = new ArrayList<>(waypoints.get() != null ? waypoints.get() : new ArrayList<>());
-        list.add(waypoint);
-        waypoints.set(list);
-        info("📌 Đã thêm waypoint: " + waypoint);
+    private void handleDelay(WaypointEntry entry) {
+        if (!reachedPreviousWaypoint) return;
+
+        if (delayTicks == 0) {
+            delayTicks = entry.delay * 20;
+            info("⏱️ Delay " + entry.delay + " giay.");
+        }
+
+        delayTicks--;
+        if (delayTicks <= 0) {
+            delayTicks = 0;
+            currentIndex++;
+            reachedPreviousWaypoint = true;
+        }
+    }
+
+    private void handlePos(WaypointEntry entry) {
+        Vec3d target = entry.toVec3d();
+        if (target == null) return;
+
+        Vec3d playerPos = mc.player.getPos();
+        double dist = playerPos.distanceTo(target);
+
+        if (dist < reachRange.get()) {
+            currentIndex++;
+            reachedPreviousWaypoint = true;
+        } else {
+            reachedPreviousWaypoint = false;
+            double speed = useFlySpeed.get() ? flySpeed.get() : 0.6;
+            Vec3d motion = target.subtract(playerPos).normalize().multiply(speed);
+            mc.player.setVelocity(motion);
+        }
+    }
+
+    private void handleGoto(WaypointEntry entry) {
+        Vec3d target = entry.toVec3d();
+        if (target == null) return;
+
+        Vec3d playerPos = mc.player.getPos();
+        double distance = playerPos.distanceTo(target);
+
+        if (distance <= reachRange.get()) {
+            info("📍 Da den GOTO: " + target);
+            currentIndex++;
+            gotoTickCounter = 0;
+            return;
+        }
+
+        gotoTickCounter++;
+        if (gotoTickCounter >= gotoResendDelay.get()) {
+            gotoTickCounter = 0;
+            String baritoneCmd = String.format("#goto %.1f %.1f %.1f", target.x, target.y, target.z);
+            ChatUtils.sendPlayerMsg(baritoneCmd);
+            info("➡️ Gui lai Baritone: " + baritoneCmd);
+        }
+    }
+
+    private void handleASDON(WaypointEntry entry) {
+        if (antiStuck == null) antiStuck = Modules.get().get(AntiStuckDetector.class);
+
+        if (antiStuck != null && !antiStuck.isActive()) {
+            antiStuck.toggle();
+            info("🟢 Da bat AntiStuckDetector.");
+        } else if (antiStuck == null) {
+            warning("⚠️ Khong tim thay AntiStuckDetector de bat.");
+        }
+    }
+
+    private void handleASDOFF(WaypointEntry entry) {
+        if (antiStuck == null) antiStuck = Modules.get().get(AntiStuckDetector.class);
+
+        if (antiStuck != null && antiStuck.isActive()) {
+            antiStuck.toggle();
+            info("🔴 Da tat AntiStuckDetector.");
+        } else if (antiStuck == null) {
+            warning("⚠️ Khong tim thay AntiStuckDetector de tat.");
+        }
+    }
+
+    public void addWaypoint(String wp) {
+        List<String> list = new ArrayList<>(waypointStrings.get());
+        list.add(wp);
+        waypointStrings.set(list);
+        info("📌 Da them: " + wp);
     }
 
     public void clearWaypoints() {
-        waypoints.set(new ArrayList<>());
-        info("🧹 Đã xóa tất cả waypoint.");
+        waypointStrings.set(new ArrayList<>());
+        info("🧹 Da xoa tat ca waypoint.");
     }
 
     public List<String> getWaypoints() {
-        return waypoints.get();
+        return waypointStrings.get();
     }
 
-    private int parseIntOrDefault(String s, int def) {
-        try {
-            return Integer.parseInt(s);
-        } catch (NumberFormatException e) {
-            return def;
+    @EventHandler
+    private void onGameLeft(GameLeftEvent event) {
+        if (!isActive()) return;
+        if (disableOnDisconnect.get()) {
+            info("🔌 Da disconnect khoi server, tat WaypointFly.");
+            toggle();
+        } else {
+            info("🔌 Da disconnect khoi server, nhung khong tat module.");
         }
     }
 }

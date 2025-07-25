@@ -1,9 +1,8 @@
 package zgoly.meteorist.modules.WaypointFly;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-
-import net.minecraft.util.math.Vec3d;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -11,46 +10,75 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WaypointManager {
-    private static final List<String> waypoints = new ArrayList<>();
-    private static final File FILE = new File("config/meteorist/waypoints/WaypointFly.json");
-    private static final Gson GSON = new Gson();
+    private static final String FOLDER_PATH = "config/meteorist/waypoints";
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Type LIST_TYPE = new TypeToken<List<String>>() {}.getType();
 
-    public static void addWaypoint(Vec3d vec) {
-        // Lưu theo định dạng: "x y z"
-        String wp = String.format("%.1f %.1f %.1f", vec.x, vec.y, vec.z);
-        waypoints.add(wp);
+    private static final List<String> rawWaypoints = new ArrayList<>();
+
+    public static void add(String entry) {
+        rawWaypoints.add(entry.trim());
     }
 
     public static void clearWaypoints() {
-        waypoints.clear();
+        rawWaypoints.clear();
     }
 
-    public static List<String> getWaypoints() {
-        return waypoints;
+    public static List<String> getRawWaypoints() {
+        return rawWaypoints;
     }
 
-    public static void save() {
-        try {
-            FILE.getParentFile().mkdirs();
-            try (Writer writer = new FileWriter(FILE)) {
-                GSON.toJson(waypoints, writer);
+    public static List<WaypointEntry> getWaypoints() {
+        List<WaypointEntry> parsed = new ArrayList<>();
+        for (String line : rawWaypoints) {
+            try {
+                parsed.add(new WaypointEntry(line));
+            } catch (Exception e) {
+                System.err.println("❌ Loi khi phan tich waypoint: " + line);
+                e.printStackTrace();
             }
+        }
+        return parsed;
+    }
+
+    // Luu file mac dinh
+    public static void save() {
+        save("default");
+    }
+
+    // Tai file mac dinh
+    public static void load() {
+        load("default");
+    }
+
+    // Luu profile theo ten
+    public static void save(String name) {
+        File file = new File(FOLDER_PATH, name + ".json");
+        file.getParentFile().mkdirs();
+
+        try (Writer writer = new FileWriter(file)) {
+            GSON.toJson(rawWaypoints, LIST_TYPE, writer);
         } catch (IOException e) {
+            System.err.println("❌ Khong the luu waypoint vao file: " + file.getPath());
             e.printStackTrace();
         }
     }
 
-    public static void load() {
-        try {
-            if (!FILE.exists()) return;
+    // Tai profile theo ten
+    public static void load(String name) {
+        File file = new File(FOLDER_PATH, name + ".json");
+        rawWaypoints.clear();
 
-            try (Reader reader = new FileReader(FILE)) {
-                Type listType = new TypeToken<List<String>>() {}.getType();
-                List<String> loaded = GSON.fromJson(reader, listType);
-                waypoints.clear();
-                if (loaded != null) waypoints.addAll(loaded);
-            }
+        if (!file.exists()) {
+            System.err.println("⚠️ Khong tim thay file waypoint: " + file.getPath());
+            return;
+        }
+
+        try (Reader reader = new FileReader(file)) {
+            List<String> loaded = GSON.fromJson(reader, LIST_TYPE);
+            if (loaded != null) rawWaypoints.addAll(loaded);
         } catch (IOException e) {
+            System.err.println("❌ Khong the doc file waypoint: " + file.getPath());
             e.printStackTrace();
         }
     }

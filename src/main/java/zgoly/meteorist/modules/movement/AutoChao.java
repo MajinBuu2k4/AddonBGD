@@ -42,7 +42,7 @@ public class AutoChao extends LicenseProtectedModule {
     @Override
     public void onActivate() {
         super.onActivate(); // ✅ Kiểm tra license
-        if (!isActive()) return;
+        if (!isActive()) return; // ✅ License hợp lệ tiếp tục
 
         isActivated = true;
     }

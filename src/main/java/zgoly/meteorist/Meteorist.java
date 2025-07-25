@@ -16,7 +16,10 @@ import org.slf4j.LoggerFactory;
 import zgoly.meteorist.commands.*;
 import zgoly.meteorist.hud.TextPresets;
 import zgoly.meteorist.modules.*;
-import zgoly.meteorist.modules.FlyGotoMine.FlyGotoMine;
+import zgoly.meteorist.modules.SortedInventory.SortedInventoryCommand;
+import zgoly.meteorist.modules.SortedInventory.SortedInventory;
+import zgoly.meteorist.modules.WaypointFly.AntiStuckDetector;
+import zgoly.meteorist.modules.WaypointFly.ReturnToStart;
 import zgoly.meteorist.modules.WaypointFly.WaypointFly;
 import zgoly.meteorist.modules.WaypointFly.CommandWaypoint;
 import zgoly.meteorist.modules.autocrafter.AutoCrafter;
@@ -30,7 +33,9 @@ import zgoly.meteorist.modules.slotclick.SlotClick;
 import zgoly.meteorist.settings.StringPairSetting;
 import zgoly.meteorist.utils.misc.MeteoristStarscript;
 import zgoly.meteorist.modules.ChuyenSinh.*;
-import zgoly.meteorist.commands.FlyCommand;
+import zgoly.meteorist.modules.tests.*;
+import zgoly.meteorist.Network.*;
+
 
 //Tự thêm
 
@@ -65,6 +70,7 @@ public class Meteorist extends MeteorAddon {
 
     @Override
     public void onInitialize() {
+        new UseModuleReporter();
         // Log random message
         Random random = new Random();
         LOG.info(MESSAGES[random.nextInt(MESSAGES.length)]);
@@ -119,9 +125,12 @@ public class Meteorist extends MeteorAddon {
         Modules.get().add(new ThongBaoBoss());
         Modules.get().add(new AutoGotoMine());
         Modules.get().add(new AutoChao());
-        Modules.get().add(new FlyGotoMine());
-        Modules.get().add(new FlySurvival());
         Modules.get().add(new WaypointFly());
+        Modules.get().add(new ReturnToStart());
+        Modules.get().add(new AntiStuckDetector());
+        Modules.get().add(new SortedInventory());
+
+
 
 
 
@@ -148,8 +157,9 @@ public class Meteorist extends MeteorAddon {
         Commands.add(new InteractCommand());
         Commands.add(new PlayersInfoCommand());
         Commands.add(new ActiveCommand());
-        Commands.add(new FlyCommand());
         Commands.add(new CommandWaypoint());
+        Commands.add(new SortedInventoryCommand());
+
 
 
 
