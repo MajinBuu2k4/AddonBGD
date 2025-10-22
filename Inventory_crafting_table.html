@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mô phỏng Slot Bàn Chế Tạo Minecraft</title>
+    <style>
+        body {
+          font-family: sans-serif;
+          background-color: #222;
+          color: white;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 20px;
+        }
+        h2 {
+          margin: 10px;
+        }
+        .container {
+          display: flex;
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+        .crafting-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .grid {
+          display: grid;
+          gap: 4px;
+        }
+        /* Lưới 3x3 cho Crafting */
+        .crafting-grid {
+          grid-template-columns: repeat(3, 40px);
+        }
+        /* Lưới 9x1 cho Hotbar và Inventory */
+        .inventory-grid {
+          grid-template-columns: repeat(9, 40px);
+        }
+        .slot {
+          width: 40px;
+          height: 40px;
+          border: 2px solid #888;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          border-radius: 4px;
+          box-sizing: border-box; /* Quan trọng để border không làm tăng kích thước */
+        }
+
+        /* Styling riêng cho từng khu vực */
+        .result .slot {
+            background-color: #0c0; /* Màu xanh lá cho kết quả */
+            border-color: #0f0;
+        }
+        .crafting .slot {
+          background-color: #555;
+          border-color: #bbb;
+        }
+        .inventory .slot {
+          background-color: #333;
+        }
+        .hotbar .slot {
+          background-color: #666;
+        }
+        .arrow {
+            font-size: 30px;
+            align-self: center;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>🔨 Bàn Chế Tạo (Crafting Table)</h2>
+
+<div class="container">
+    <div class="crafting-area">
+        <h3>Lưới Chế Tạo (3x3)</h3>
+        <div class="grid crafting-grid crafting" id="craftingGrid"></div>
+    </div>
+
+    <div class="arrow">➡️</div>
+
+    <div class="crafting-area">
+        <h3>Kết Quả</h3>
+        <div class="grid result" id="resultSlot"></div>
+    </div>
+</div>
+
+<div style="margin-top: 30px;">
+    <h2>🎒 Hàng Tồn Kho Player (3x9)</h2>
+    <div class="grid inventory-grid inventory" id="inventoryGrid"></div>
+
+    <h2>🔧 Thanh Vật Phẩm Nóng (Hotbar - 1x9)</h2>
+    <div class="grid inventory-grid hotbar" id="hotbarGrid"></div>
+</div>
+
+
+<script>
+    // Hàm tạo và thêm slot
+    function createAndAppendSlots(containerId, start, end) {
+      const container = document.getElementById(containerId);
+      for (let i = start; i <= end; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'slot';
+        slot.textContent = i;
+        container.appendChild(slot);
+      }
+    }
+
+    // 1. Ô Kết Quả (Slot 0)
+    createAndAppendSlots('resultSlot', 0, 0);
+
+    // 2. Lưới Chế Tạo 3x3 (Slot 1 đến 9)
+    // Slot 1-3 là hàng 1, 4-6 là hàng 2, 7-9 là hàng 3
+    createAndAppendSlots('craftingGrid', 1, 9);
+
+    // 3. Hàng Tồn Kho Player (Slot 10 đến 36) - 3 hàng x 9 cột
+    // Hàng tồn kho bắt đầu từ slot 10
+    createAndAppendSlots('inventoryGrid', 10, 36);
+
+    // 4. Thanh Vật Phẩm Nóng (Slot 37 đến 45) - 1 hàng x 9 cột
+    // Hotbar bắt đầu từ slot 37
+    createAndAppendSlots('hotbarGrid', 37, 45);
+</script>
+</body>
+</html>
